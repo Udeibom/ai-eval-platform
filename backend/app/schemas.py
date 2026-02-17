@@ -18,6 +18,7 @@ class TestSuiteResponse(BaseModel):
     class Config:
         from_attributes = True
 
+
 # -------- Prompt --------
 
 class PromptCreate(BaseModel):
@@ -30,6 +31,23 @@ class PromptResponse(BaseModel):
     input_text: str
     expected_output: Optional[str]
     metadata: Optional[dict]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# -------- Experiment --------
+
+class ExperimentCreate(BaseModel):
+    test_suite_id: UUID
+    model_name: str
+
+class ExperimentResponse(BaseModel):
+    id: UUID
+    test_suite_id: UUID
+    model_name: str
+    status: str
     created_at: datetime
 
     class Config:

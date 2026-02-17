@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 
 from app.db import get_db, engine
 from app.models import Base
-from app.routers import test_suites, prompts
+from app.routers import test_suites, prompts, experiments
 
 
 @asynccontextmanager
@@ -29,6 +29,7 @@ app = FastAPI(
 # Include routers
 app.include_router(test_suites.router)
 app.include_router(prompts.router)
+app.include_router(experiments.router)
 
 
 @app.get("/health")

@@ -15,7 +15,9 @@ def create_test_suite(db: Session, suite: schemas.TestSuiteCreate):
 
 
 def get_test_suites(db: Session):
-    return db.query(models.TestSuite).order_by(models.TestSuite.created_at.desc()).all()
+    return db.query(models.TestSuite).order_by(
+        models.TestSuite.created_at.desc()
+    ).all()
 
 
 # -------- Prompts --------
@@ -37,3 +39,24 @@ def get_prompts_by_suite(db: Session, suite_id):
     return db.query(models.Prompt).filter(
         models.Prompt.test_suite_id == suite_id
     ).all()
+
+
+# -------- Experiments --------
+
+def create_experiment(db: Session, suite_id, model_name):
+    exp = models.Experiment(
+        test_suite_id=suite_id,
+        model_name=model_name,
+        status="running"
+    )
+    db.add(exp)
+    db.commit()
+    db.refresh(exp)
+    return exp
+
+
+def update_experiment_status(db: Session, exp, status):
+    exp.status = status
+    db.commit()
+    db.refresh(exp)
+    return exp
