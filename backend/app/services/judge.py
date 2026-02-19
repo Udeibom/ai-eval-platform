@@ -4,8 +4,12 @@ from app.config import HF_API_KEY, HF_MODEL
 from sqlalchemy.orm import Session
 from app import models
 
-HF_URL = f"https://api-inference.huggingface.co/models/{HF_MODEL}"
-headers = {"Authorization": f"Bearer {HF_API_KEY}"}
+HF_URL = f"https://router.huggingface.co/hf-inference/models/{HF_MODEL}"
+
+headers = {
+    "Authorization": f"Bearer {HF_API_KEY}"
+}
+
 
 
 def build_prompt(question, answer, ground_truth=None):
@@ -55,11 +59,24 @@ def call_judge(prompt):
     payload = {"inputs": prompt, "parameters": {"max_new_tokens": 200}}
 
     response = requests.post(HF_URL, headers=headers, json=payload)
-    result = response.json()
 
-    text = result[0]["generated_text"] if isinstance(result, list) else str(result)
+    if response.status_code != 200:
+        raise Exception(
+            f"HuggingFace API error {response.status_code}: {response.text}"
+        )
 
-    return text
+    try:
+        result = response.json()
+    except ValueError:
+        raise Exception(
+            f"Invalid JSON from HF: {response.text}"
+        )
+
+    if isinstance(result, list) and "generated_text" in result[0]:
+        return result[0]["generated_text"]
+
+    return str(result)
+
 
 
 def parse_judge_output(text):

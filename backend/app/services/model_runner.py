@@ -4,26 +4,51 @@ from sqlalchemy.orm import Session
 from app.config import HF_API_KEY, HF_MODEL
 from app import models
 
-HF_URL = f"https://api-inference.huggingface.co/models/{HF_MODEL}"
 
-headers = {"Authorization": f"Bearer {HF_API_KEY}"}
+HF_URL = f"https://router.huggingface.co/hf-inference/models/{HF_MODEL}"
+
+headers = {
+    "Authorization": f"Bearer {HF_API_KEY}",
+    "Content-Type": "application/json"
+}
 
 
 def call_model(prompt: str):
     payload = {
         "inputs": prompt,
-        "parameters": {"max_new_tokens": 200}
+        "parameters": {
+            "max_new_tokens": 200,
+            "return_full_text": False
+        }
     }
 
     start = time.time()
-    response = requests.post(HF_URL, headers=headers, json=payload)
-    latency = int((time.time() - start) * 1000)
 
-    result = response.json()
+    try:
+        response = requests.post(HF_URL, headers=headers, json=payload)
+        latency = int((time.time() - start) * 1000)
 
-    text = result[0]["generated_text"] if isinstance(result, list) else str(result)
+        # Handle non-200 responses
+        if response.status_code != 200:
+            return f"MODEL_ERROR: {response.text}", latency
 
-    return text, latency
+        result = response.json()
+
+        # Standard HF text generation response format
+        if isinstance(result, list) and len(result) > 0:
+            if "generated_text" in result[0]:
+                return result[0]["generated_text"], latency
+
+        # HF error response format
+        if isinstance(result, dict) and "error" in result:
+            return f"MODEL_ERROR: {result['error']}", latency
+
+        # Fallback if response shape changes
+        return str(result), latency
+
+    except Exception as e:
+        latency = int((time.time() - start) * 1000)
+        return f"EXCEPTION: {str(e)}", latency
 
 
 def run_experiment(db: Session, experiment: models.Experiment):

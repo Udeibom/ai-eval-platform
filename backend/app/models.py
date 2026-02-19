@@ -27,6 +27,8 @@ class Prompt(Base):
 
     test_suite = relationship("TestSuite", back_populates="prompts")
 
+    outputs = relationship("Output", back_populates="prompt")
+
 class Experiment(Base):
     __tablename__ = "experiments"
 
@@ -50,7 +52,11 @@ class Output(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     experiment = relationship("Experiment", back_populates="outputs")
+
+    prompt = relationship("Prompt", back_populates="outputs")
+
     evaluations = relationship("Evaluation", back_populates="output")
+
 
 class Evaluation(Base):
     __tablename__ = "evaluations"
