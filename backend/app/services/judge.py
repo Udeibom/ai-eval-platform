@@ -1,13 +1,14 @@
 import requests
 import json
-from app.config import HF_API_KEY, HF_MODEL
+from app.config import HF_API_KEY, HF_JUDGE_MODEL
 from sqlalchemy.orm import Session
 from app import models
 
-HF_URL = f"https://router.huggingface.co/hf-inference/models/{HF_MODEL}"
+HF_URL = f"https://router.huggingface.co/hf-inference/models/{HF_JUDGE_MODEL}"
 
 headers = {
-    "Authorization": f"Bearer {HF_API_KEY}"
+    "Authorization": f"Bearer {HF_API_KEY}",
+    "Content-Type": "application/json"
 }
 
 
@@ -61,9 +62,11 @@ def call_judge(prompt):
     response = requests.post(HF_URL, headers=headers, json=payload)
 
     if response.status_code != 200:
-        raise Exception(
-            f"HuggingFace API error {response.status_code}: {response.text}"
-        )
+        return json.dumps({
+            "score": 0,
+            "hallucination": True,
+            "explanation": f"Judge API error: {response.text}"
+        })
 
     try:
         result = response.json()

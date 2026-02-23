@@ -1,11 +1,11 @@
 import requests
 import time
 from sqlalchemy.orm import Session
-from app.config import HF_API_KEY, HF_MODEL
+from app.config import HF_API_KEY, HF_GENERATION_MODEL
 from app import models
 
 
-HF_URL = f"https://router.huggingface.co/hf-inference/models/{HF_MODEL}"
+HF_URL = f"https://router.huggingface.co/hf-inference/models/{HF_GENERATION_MODEL}"
 
 headers = {
     "Authorization": f"Bearer {HF_API_KEY}",
