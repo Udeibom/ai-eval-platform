@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.config import GROQ_API_KEY, GROQ_JUDGE_MODEL
 from app import models
-
+from app.constants import HALLUCINATION_THRESHOLD
 
 # Initialize Groq client
 client = Groq(api_key=GROQ_API_KEY)
@@ -104,10 +104,14 @@ def evaluate_outputs(db: Session, experiment_id: int) -> None:
         raw_response = call_judge(prompt)
         parsed = parse_judge_output(raw_response)
 
+        score = parsed["score"]
+
+        hallucination_flag = score < HALLUCINATION_THRESHOLD
+
         evaluation = models.Evaluation(
             output_id=output.id,
-            score=parsed["score"],
-            hallucination=parsed["hallucination"],
+            score=score,
+            hallucination=hallucination_flag,
             explanation=parsed["explanation"],
         )
 
