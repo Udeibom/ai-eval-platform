@@ -58,3 +58,11 @@ class ExperimentResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class ExperimentMetrics(BaseModel):
+    experiment_id: UUID
+    model_name: str
+    num_samples: int
+    mean_score: float
+    std_dev: float
