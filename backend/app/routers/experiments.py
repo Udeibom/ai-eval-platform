@@ -14,6 +14,10 @@ from app.services.summary import get_experiment_summary
 
 router = APIRouter(prefix="/experiments", tags=["Experiments"])
 
+@router.get("/", response_model=list[schemas.ExperimentResponse])
+def list_experiments(db: Session = Depends(get_db)):
+    experiments = db.query(models.Experiment).all()
+    return experiments
 
 @router.post("/", response_model=schemas.ExperimentResponse)
 def create_experiment(
