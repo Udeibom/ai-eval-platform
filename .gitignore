@@ -50,3 +50,10 @@ build/
 # =========================
 .DS_Store
 Thumbs.db
+
+# Next.js
+frontend/.next/
+frontend/out/
+
+# Node
+frontend/node_modules/
