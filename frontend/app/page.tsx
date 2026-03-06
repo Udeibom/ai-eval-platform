@@ -35,6 +35,18 @@ export default function HomePage() {
         >
           View Past Experiments
         </button>
+
+        <button
+          onClick={() => router.push("/leaderboard")}
+          style={{
+            padding: "10px 20px",
+            fontSize: 16,
+            marginLeft: 10,
+            cursor: "pointer"
+          }}
+        >
+          View Leaderboard
+        </button>
       </div>
     </div>
   );

@@ -19,17 +19,8 @@ export async function getExperimentSummary(id: string) {
 }
 
 export async function getAllExperimentSummaries() {
-  const experiments = await getExperiments();
-
-  const summaries = await Promise.all(
-    experiments.map(async (exp) => {
-      const res = await fetch(`${API_URL}/experiments/${exp.id}/summary`);
-      if (!res.ok) return null;
-      return res.json();
-    })
-  );
-
-  return summaries.filter(Boolean);
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/experiments/summaries`);
+  return res.json();
 }
 
 export async function compareExperiments(a: string, b: string) {

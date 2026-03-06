@@ -118,3 +118,20 @@ def experiment_summary(experiment_id: UUID, db: Session = Depends(get_db)):
         "duration_ms": experiment.duration_ms,
         **metrics
     }
+
+@router.get("/summaries")
+def all_experiment_summaries(db: Session = Depends(get_db)):
+    experiments = db.query(models.Experiment).all()
+
+    results = []
+
+    for exp in experiments:
+        metrics = get_experiment_summary(db, exp.id)
+
+        results.append({
+            "experiment_id": exp.id,
+            "model_name": exp.model_name,
+            **metrics
+        })
+
+    return results
