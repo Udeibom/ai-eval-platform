@@ -29,7 +29,7 @@ def create_prompt(db: Session, suite_id, prompt: schemas.PromptCreate):
         test_suite_id=suite_id,
         input_text=prompt.input_text,
         expected_output=prompt.expected_output,
-        metadata=prompt.metadata
+        metadata=prompt.metadata or {}  # default to empty dict
     )
     db.add(db_prompt)
     db.commit()

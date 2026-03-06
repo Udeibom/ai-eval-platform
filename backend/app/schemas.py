@@ -32,7 +32,7 @@ class PromptResponse(BaseModel):
     id: UUID
     input_text: str
     expected_output: Optional[str]
-    metadata: Optional[dict]
+    metadata: dict = {}
     created_at: datetime
 
     class Config:
