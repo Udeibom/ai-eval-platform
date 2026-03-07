@@ -1,7 +1,8 @@
 import { getAllExperimentSummaries } from "@/lib/api";
+import { ExperimentSummary } from "@/types/experiment";
 
 export default async function LeaderboardPage() {
-  const experiments = await getAllExperimentSummaries();
+  const experiments: ExperimentSummary[] = await getAllExperimentSummaries();
 
   const sorted = experiments.sort(
     (a, b) => b.mean_score - a.mean_score
