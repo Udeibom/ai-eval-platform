@@ -14,26 +14,64 @@ from app.services.summary import get_experiment_summary
 
 router = APIRouter(prefix="/experiments", tags=["Experiments"])
 
+
 @router.get("/", response_model=list[schemas.ExperimentResponse])
 def list_experiments(db: Session = Depends(get_db)):
-    experiments = db.query(models.Experiment).all()
+    experiments = (
+        db.query(models.Experiment)
+        .filter(models.Experiment.status == "completed")
+        .all()
+    )
     return experiments
+
 
 @router.post("/", response_model=schemas.ExperimentResponse)
 def create_experiment(
     exp: schemas.ExperimentCreate,
     db: Session = Depends(get_db)
 ):
+    ALLOWED_MODELS = {
+        "mixtral-8x7b-32768",
+        "llama3-8b-8192",
+        "llama-3.3-70b-versatile"
+    }
+
+    # Normalize model name
+    model_name = exp.model_name.strip().lower()
+
+    if model_name not in ALLOWED_MODELS:
+        raise HTTPException(
+            status_code=400,
+            detail="Model not supported"
+        )
+
+    # Prevent duplicate runs
+    existing = (
+        db.query(models.Experiment)
+        .filter(
+            models.Experiment.test_suite_id == exp.test_suite_id,
+            models.Experiment.model_name == model_name,
+            models.Experiment.status == "completed"
+        )
+        .first()
+    )
+
+    if existing:
+        raise HTTPException(
+            status_code=400,
+            detail="Experiment already exists for this model and test suite"
+        )
+
     metadata = {
-        "provider": "huggingface",
-        "temperature": 0.7,
+        "provider": "groq",
+        "temperature": 0.2,
         "max_tokens": 200
     }
 
     experiment = crud.create_experiment(
         db,
         exp.test_suite_id,
-        exp.model_name,
+        model_name,
         metadata
     )
 
@@ -96,6 +134,7 @@ def compare_stats(
         **result
     }
 
+
 @router.get("/{experiment_id}/summary", response_model=schemas.ExperimentSummary)
 def experiment_summary(experiment_id: UUID, db: Session = Depends(get_db)):
 
@@ -119,9 +158,14 @@ def experiment_summary(experiment_id: UUID, db: Session = Depends(get_db)):
         **metrics
     }
 
+
 @router.get("/summaries")
 def all_experiment_summaries(db: Session = Depends(get_db)):
-    experiments = db.query(models.Experiment).all()
+    experiments = (
+        db.query(models.Experiment)
+        .filter(models.Experiment.status == "completed")
+        .all()
+    )
 
     results = []
 

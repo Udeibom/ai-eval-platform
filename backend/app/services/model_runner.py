@@ -55,6 +55,10 @@ def run_experiment(db: Session, experiment: models.Experiment) -> None:
             prompt.input_text
         )
 
+        # Skip failed model calls
+        if output_text.startswith("MODEL_ERROR"):
+            continue
+
         output = models.Output(
             experiment_id=experiment.id,
             prompt_id=prompt.id,
