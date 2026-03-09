@@ -4,7 +4,7 @@ import { ExperimentSummary } from "@/types/experiment";
 export default async function LeaderboardPage() {
   const experiments: ExperimentSummary[] = await getAllExperimentSummaries();
 
-  const sorted = experiments.sort(
+  const sorted = [...experiments].sort(
     (a, b) => b.mean_score - a.mean_score
   );
 
@@ -21,6 +21,7 @@ export default async function LeaderboardPage() {
             <th className="p-2">Avg Latency</th>
           </tr>
         </thead>
+
         <tbody>
           {sorted.map((exp) => (
             <tr key={exp.experiment_id} className="border-b">
@@ -29,9 +30,7 @@ export default async function LeaderboardPage() {
               <td className="p-2">
                 {(exp.hallucination_rate * 100).toFixed(1)}%
               </td>
-              <td className="p-2">
-                {exp.avg_latency.toFixed(0)} ms
-              </td>
+              <td className="p-2">{exp.avg_latency.toFixed(0)} ms</td>
             </tr>
           ))}
         </tbody>

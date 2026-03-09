@@ -1,4 +1,5 @@
 import { Experiment } from "@/types/experiment";
+import { ExperimentSummary } from "@/types/experiment";
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -18,9 +19,17 @@ export async function getExperimentSummary(id: string) {
   return res.json();
 }
 
-export async function getAllExperimentSummaries() {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/experiments/summaries`);
-  return res.json();
+export async function getAllExperimentSummaries(): Promise<ExperimentSummary[]> {
+  const res = await fetch(`${API_URL}/experiments/summaries`);
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch experiment summaries");
+  }
+
+  const data = await res.json();
+
+  // Handle APIs that wrap results
+  return Array.isArray(data) ? data : data.summaries ?? data.data ?? [];
 }
 
 export async function compareExperiments(a: string, b: string) {
