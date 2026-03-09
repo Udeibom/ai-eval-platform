@@ -159,23 +159,48 @@ def experiment_summary(experiment_id: UUID, db: Session = Depends(get_db)):
     }
 
 
-@router.get("/summaries")
-def all_experiment_summaries(db: Session = Depends(get_db)):
+@router.get("/leaderboard")
+def leaderboard(db: Session = Depends(get_db)):
+
     experiments = (
         db.query(models.Experiment)
         .filter(models.Experiment.status == "completed")
         .all()
     )
 
-    results = []
+    model_stats = {}
 
     for exp in experiments:
+
         metrics = get_experiment_summary(db, exp.id)
 
-        results.append({
-            "experiment_id": exp.id,
-            "model_name": exp.model_name,
-            **metrics
+        model = exp.model_name
+
+        if model not in model_stats:
+            model_stats[model] = {
+                "score": [],
+                "latency": [],
+                "hallucination": [],
+                "samples": 0
+            }
+
+        model_stats[model]["score"].append(metrics["mean_score"])
+        model_stats[model]["latency"].append(metrics["avg_latency"])
+        model_stats[model]["hallucination"].append(metrics["hallucination_rate"])
+        model_stats[model]["samples"] += metrics["num_samples"]
+
+    leaderboard = []
+
+    for model, stats in model_stats.items():
+
+        leaderboard.append({
+            "model": model,
+            "mean_score": sum(stats["score"]) / len(stats["score"]),
+            "avg_latency": sum(stats["latency"]) / len(stats["latency"]),
+            "hallucination_rate": sum(stats["hallucination"]) / len(stats["hallucination"]),
+            "samples": stats["samples"]
         })
 
-    return results
+    leaderboard.sort(key=lambda x: x["mean_score"], reverse=True)
+
+    return leaderboard
