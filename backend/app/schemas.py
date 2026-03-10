@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
 from uuid import UUID
 from datetime import datetime
@@ -27,17 +27,18 @@ class PromptCreate(BaseModel):
     expected_output: Optional[str] = None
     metadata: Optional[dict] = None
 
-
 class PromptResponse(BaseModel):
     id: UUID
     input_text: str
     expected_output: Optional[str]
-    metadata: dict = {}
+
+    metadata: dict = Field(default_factory=dict, alias="metadata_")
+
     created_at: datetime
 
     class Config:
         from_attributes = True
-
+        populate_by_name = True
 
 # -------- Experiment --------
 
