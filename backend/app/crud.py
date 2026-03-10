@@ -38,6 +38,20 @@ def create_prompt(db: Session, suite_id, prompt: schemas.PromptCreate):
 
 
 def get_prompts_by_suite(db: Session, suite_id):
+    prompts = db.query(models.Prompt).filter(
+        models.Prompt.test_suite_id == suite_id
+    ).all()
+
+    # Ensure metadata is a dictionary if it isn't
+    for prompt in prompts:
+        if isinstance(prompt.metadata_, dict) is False:
+            prompt.metadata_ = {}  # Convert to an empty dict if not a dictionary
+        # Or use prompt.metadata_.to_dict() if it's a custom object with that method
+
+    return prompts
+
+
+def get_prompts_by_suite(db: Session, suite_id):
     return db.query(models.Prompt).filter(
         models.Prompt.test_suite_id == suite_id
     ).all()
