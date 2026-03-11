@@ -15,28 +15,35 @@ def build_prompt(question: str, answer: str, ground_truth: str | None = None) ->
     Builds the evaluation prompt for the judge model.
     """
     return f"""
-You are an AI evaluator.
+You are an expert AI evaluator.
 
-Return ONLY valid JSON.
+Evaluate the MODEL ANSWER using the QUESTION and GROUND TRUTH.
 
-Score 0-5.
-Mark hallucination true if fabricated facts exist.
+SCORING RULES:
+0 = completely incorrect
+1 = mostly incorrect
+2 = partially correct
+3 = mostly correct
+4 = correct
+5 = perfectly correct
+
+A hallucination occurs if the model invents facts not supported by the ground truth.
 
 QUESTION:
 {question}
 
-MODEL ANSWER:
-{answer}
-
 GROUND TRUTH:
 {ground_truth}
 
-Return:
+MODEL ANSWER:
+{answer}
+
+Return ONLY valid JSON:
 
 {{
-  "score": number,
-  "hallucination": boolean,
-  "explanation": "short explanation"
+"score": number,
+"hallucination": true or false,
+"explanation": "short explanation"
 }}
 """
 
@@ -51,6 +58,7 @@ def call_judge(prompt: str) -> str:
             model=GROQ_JUDGE_MODEL,
             messages=[{"role": "user", "content": prompt}],
             temperature=0,
+            top_p=0.9,
             max_tokens=200,
         )
 
@@ -72,15 +80,25 @@ def parse_judge_output(text: str) -> dict:
     Falls back to a default failure response if parsing fails.
     """
     try:
-        start = text.index("{")
-        end = text.rindex("}") + 1
-        return json.loads(text[start:end])
+        start = text.find("{")
+        end = text.rfind("}") + 1
+
+        if start == -1 or end == -1:
+            raise ValueError("JSON not found")
+
+        parsed = json.loads(text[start:end])
+
+        return {
+            "score": int(parsed.get("score", 0)),
+            "hallucination": bool(parsed.get("hallucination", True)),
+            "explanation": parsed.get("explanation", "")
+        }
 
     except Exception:
         return {
             "score": 0,
             "hallucination": True,
-            "explanation": "Failed to parse judge output",
+            "explanation": "Failed to parse judge output"
         }
 
 
@@ -104,15 +122,25 @@ def evaluate_outputs(db: Session, experiment_id: int) -> None:
         raw_response = call_judge(prompt)
         parsed = parse_judge_output(raw_response)
 
-        score = parsed["score"]
+        score = parsed.get("score", 0)
+        hallucination_flag = parsed.get("hallucination", True)
+        explanation = parsed.get("explanation", "No explanation provided")
 
-        hallucination_flag = score < HALLUCINATION_THRESHOLD
+        # Avoid double evaluations
+        existing = (
+            db.query(models.Evaluation)
+            .filter(models.Evaluation.output_id == output.id)
+            .first()
+        )
+
+        if existing:
+            continue
 
         evaluation = models.Evaluation(
             output_id=output.id,
             score=score,
             hallucination=hallucination_flag,
-            explanation=parsed["explanation"],
+            explanation=explanation,
         )
 
         db.add(evaluation)
